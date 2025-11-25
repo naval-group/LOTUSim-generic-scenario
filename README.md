@@ -1,93 +1,283 @@
 # LOTUSim Generic Scenario
 
+## Setup and Source the Packages
 
+The architecture of the three repositories is defined in:  
+`lotusim-generic-scenario/src/simulation_run/executable/scenario_launch.sh`
 
-## Getting started
+```sh
+# -------------------- Paths --------------------
+PATH=$HOME/lotusim_ws/src/lotusim/physics:$HOME/lotusim_ws/src/lotusim/launch:$PATH
+LOTUSIM_WS=$HOME/lotusim_ws
+LOTUSIM_PATH=$LOTUSIM_WS/src/lotusim
+LD_LIBRARY_PATH=$LOTUSIM_PATH/physics:$LD_LIBRARY_PATH
+LOTUSIM_MODELS_PATH=$LOTUSIM_PATH/assets/models
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+# --- Updated paths for your scenario workspace ---
+LOTUSIM_SCENARIO_WS=$HOME/Documents/workspace/lotusim/lotusim-generic-scenario/
+CONFIG_DIR="$LOTUSIM_SCENARIO_WS/src/simulation_run/config"
+UNITY_EXE_PATH="$LOTUSIM_SCENARIO_WS/lotusim_unity_executables/lotusim_scenario_linux/lotusim_scenario.x86_64"
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+Clone the repository in the correct location (or update paths accordingly):
 
-## Add your files
-
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/ee/gitlab-basics/add-file.html#add-a-file-using-the-command-line) or push an existing Git repository with the following command:
-
+```sh
+git clone --recurse-submodules <git url>
 ```
-cd existing_repo
-git remote add origin https://developers.naval-group.com/gitlab/naval-group/naval-group-far-east/lotusim-opensource/lotusim-generic-scenario.git
-git branch -M main
-git push -uf origin main
+
+Or after cloning:
+
+```sh
+git submodule update --init --recursive
 ```
 
-## Integrate with your tools
+Open two terminals, do these commands:
 
-- [ ] [Set up project integrations](https://developers.naval-group.com/gitlab/naval-group/naval-group-far-east/lotusim-opensource/lotusim-generic-scenario/-/settings/integrations)
+### Terminal 1: Build and Source
 
-## Collaborate with your team
+```sh
+source /opt/ros/humble/setup.bash
+lotusim clean_build
+source $HOME/lotusim_ws/install/setup.bash
+cd $HOME/Documents/workspace/lotusim/lotusim-generic-scenario/
+colcon build
+source install/setup.bash 
+```
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/ee/user/project/merge_requests/merge_when_pipeline_succeeds.html)
+### Terminal 2: Source Workspaces
 
-## Test and Deploy
+```sh
+source /opt/ros/humble/setup.bash
+source $HOME/lotusim_ws/install/setup.bash
+source $HOME/Documents/workspace/lotusim/lotusim-generic-scenario/install/setup.bash
+```
 
-Use the built-in continuous integration in GitLab.
+Your setup is now complete, you’re ready to start a simulation!
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/index.html)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+## Configure the parameters for your simulation
 
-***
+All configuration files are located in: `/lotusim-generic-scenario/src/simulation_run/config/files.json`
 
-# Editing this README
+### Spawning Agents: Supported Initialization Formats
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+When spawning an agent in the simulation, the user can initialize its position in **two different ways**, depending on the number of elements provided in the pose array.
 
-## Suggestions for a good README
+There are two accepted formats:
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+---
 
-## Name
-Choose a self-explaining name for your project.
+**1. Geographic Position (GeoPoint)**
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+Use this format when providing **latitude and longitude**, with an optional altitude.
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+Supported inputs:
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+- `[lat, lon]`
+- `[lat, lon, alt]`
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+When one of these formats is detected, the system automatically sends a **GeoPoint** message.
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+---
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+**2. Full Pose (vessel_position)**
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Use this format when providing a full **6-element pose**, including position and orientation:
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+- `[x, y, z, roll, pitch, yaw]`
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+When 6 elements are detected, the system sends a **vessel_position** message to place the agent at the specified Cartesian pose.
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+---
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+**Example (2-element GeoPoint):**
 
-## License
-For open source projects, say how it is licensed.
+```json
+"Wamv": {
+  "nb_agents": 1,
+  "poses": [
+    [-34.8852, 138.6217]
+  ],
+  "model": "model.sdf",
+  "xdyn": true
+}
+```
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+> **Note**: To enable the physics of the environment (waves and currents) set `"xdyn": true`
+
+Below is complete example of a configuration file: `defenseScenario.json`
+
+```json
+{
+  "world_file": "defenseScenario.world",
+
+  "agents": {
+    "Lrauv": {
+      "nb_agents": 5,
+      "poses": [
+        [-2513.0, -2997.0, -100.0, 0.0, 0.0, 0.0],
+        [-2515.0, -3000.0, -100.0, 0.0, 0.0, 0.0],
+        [-2513.0, -3003.0, -100.0, 0.0, 0.0, 0.0],
+        [-2518.0, -3003.0, -100.0, 0.0, 0.0, 0.0],
+        [-2518.0, -2997.0, -100.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": true
+    },
+
+    "Bluerov2_heavy": {
+      "nb_agents": 1,
+      "poses": [
+        [-3000.0, -2500.0, -50.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": true
+    },
+
+    "Mine": {
+      "nb_agents": 1,
+      "poses": [
+        [0.0, 0.0, -100.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": true
+    },
+
+    "Pha": {
+      "nb_agents": 1,
+      "poses": [
+        [-3000.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": true
+    },
+
+    "Fremm": {
+      "nb_agents": 1,
+      "poses": [
+        [-400.0, -4800.0, 0.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": true
+    },
+
+    "Commando": {
+      "nb_agents": 1,
+      "poses": [
+        [-2000.0, -2000.0, 0.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": true
+    },
+
+    "Dtmb_hull": {
+      "nb_agents": 1,
+      "poses": [
+        [-2000.0, -1500.0, 0.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": true
+    },
+
+    "Wamv": {
+      "nb_agents": 1,
+      "poses": [
+        [-2000.0, -1600.0, 0.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": true
+    },
+
+    "X500": {
+      "nb_agents": 1,
+      "poses": [
+        [20.0, 100.0, 20.0, 0.0, 0.0, 0.0]
+      ],
+      "model": "model.sdf",
+      "xdyn": false
+    }
+  },
+
+  "aerial_domain": true,
+  "renderer_unity": true
+}
+```
+
+>**Note:** The `Dtmb_hull` agent does not have a corresponding 3D model in Unity and therefore cannot be rendered in Unity.
+
+## Launch the Simulation
+
+Once your configuration is ready, you can launch the simulation:
+
+1. **Set your IP** — Update `ROS_IP` in  
+   `lotusim-generic-scenario/src/simulation_run/executable/scenario_launch.sh`
+
+2. **Make the Unity executable runnable** — Located at:  
+   `$HOME/Documents/workspace/lotusim/lotusim-generic-scenario/lotusim_unity_executables/lotusim_scenario_linux/lotusim_scenario.x86_64`  
+   _(Make sure the path matches the one defined in `scenario_launch.sh`.)_
+
+    ```sh
+    chmod +x "$UNITY_EXE_PATH"
+    ```
+
+3. **In the Unity window**, enter:  
+   - Your local **IP address**  
+   - **ROS port:** `10000`  
+   - Choose **Spectator Mode** (free-fly camera), or leave it unchecked to follow entities (navigate with arrow keys)
+
+4. **In the first terminal**, run:
+
+    ```sh
+    ./src/simulation_run/executable/scenario_launch.sh --config /home/marie/Documents/workspace/lotusim/lotusim-generic-scenario/src/simulation_run/config/defenseScenario.json
+    ```
+
+    For debugging, append `--debug`:
+
+    ```sh
+    ./src/simulation_run/executable/scenario_launch.sh --config /home/marie/Documents/workspace/lotusim/lotusim-generic-scenario/src/simulation_run/config/defenseScenario.json --debug
+    ```
+
+5. In the second terminal launch the following bridge to activate these features:
+
+    This bridge enables communication between Gazebo and ROS 2 for simulation telemetry and environmental effects.
+
+    **Display Only Simulation Statistics (RTF)**
+
+    To bridge only the simulation statistics (e.g., simulation time, Real-Time Factor):
+
+    ```sh
+    ros2 run gz_ros2_bridge stats_gz_to_ros_bridge
+    ```
+
+    **Add Wind**
+    To bridge wind Gazebo to ROS 2:
+
+    ```sh
+    ros2 run gz_ros2_bridge wind_ros_to_gz_bridge
+    ```
+
+    **Launch Both Bridges Together**
+    To start both bridge nodes simultaneously:
+
+    ```sh
+    ros2 launch gz_ros2_bridge bridge_nodes.launch.py
+    ```
+
+    This launch file starts the following bridges:
+
+    - `wind_ros_to_gz_bridge` → Transfers wind and environmental data
+    - `stats_gz_to_ros_bridge` → Transfers simulation statistics such as simulation time and RTF
+
+6. Terminals for the physics will open automatically and the simulation will start
+
+>When the connection LOTUSim-Unity is done, in the Unity window, at the top left corner, the arrows will go from red to blue
+
+## Navigate in the Unity Scene
+
+- **Spectator Mode**: Move using `W`, `A`, `S`, `D`, `Q`, `E`, and the mouse — or use **Leap Motion** hand tracking (see README/Wiki of the Unity repo).
+
+- **Target Follower Mode**: The camera automatically cycles through agents.  
+  - Use the **arrow keys** to switch between entities.
+
+- **Change Wind Direction** (keyboard shortcuts):  
+  - X-axis: `1` / `2`  
+  - Y-axis: `4` / `5`  
+  - Z-axis: `7` / `8`

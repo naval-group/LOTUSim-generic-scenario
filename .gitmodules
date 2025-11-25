@@ -1,0 +1,3 @@
+[submodule "Submodules/ROS-TCP-Endpoint"]
+	path = Submodules/ROS-TCP-Endpoint
+	url = https://github.com/naval-group/LOTUSim-Unity-ros-tcp-endpoint
