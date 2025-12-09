@@ -69,14 +69,14 @@ class LrauvPropeller(Lrauv):
 
         # Automatic propeller sequence (phase list)
         self.propeller_phases = [
-            {"label": "High", "rpm": 500.0, "P/D": 0.88},  # First phase: High RPM
-            {"label": "Low", "rpm": 5.0, "P/D": 0.88},  # Second phase: Low RPM
+            {"label": "High", "rpm": 300.0, "P/D": 0.88},  # First phase: High RPM
+            {"label": "Low", "rpm": 200.0, "P/D": 0.88},  # Second phase: Low RPM
         ]
         self.period_sec = 10.0  # Duration (seconds) per phase
         self.current_phase_index = 0  # Track current phase
         self.nav_timer = None  # Timer for phase updates
 
-        # self.get_logger().info("LrauvPropeller initialized and automatic RPM sequence ready.")
+        self.get_logger().info("LrauvPropeller initialized and automatic RPM sequence ready.")
 
         # Automatically start the RPM sequence on initialization
         # NOTE: Disabled auto-start for development — manual control via ROS topic
@@ -126,6 +126,13 @@ class LrauvPropeller(Lrauv):
         self.get_logger().info(f"Phase: {phase['label']} - Sending propeller command.")
         self.send_propeller_command(rpm=phase["rpm"], pd=phase["P/D"])
 
+    def get_primary_thruster_name(self) -> str:
+        """Return the primary thruster name."""
+        if getattr(self, "thruster_names", None):
+            return self.thruster_names[0]
+        return "unknown_thruster"
+
+
     def send_propeller_command(self, rpm: float, pd: float):
         """
         Prepare and send a propeller command message.
@@ -134,19 +141,25 @@ class LrauvPropeller(Lrauv):
             rpm (float): Propeller rotation speed in RPM.
             pd (float): Propeller pitch-to-diameter ratio.
         """
+        thruster = self.get_primary_thruster_name()
+
         # Create a VesselCmdArray message
         cmd_array = VesselCmdArray()
         cmd = VesselCmd()
         cmd.vessel_name = getattr(self, "name", "UNKNOWN")  # Use agent name if available
-        cmd.cmd_string = json.dumps({"rpm": rpm, "P/D": pd})
-        # cmd.cmd_string = json.dumps({propeller{"rpm": rpm, "P/D": pd}})
+        # JSON command automatically uses the thruster name
+        cmd.cmd_string = json.dumps({
+            f"{thruster}(rpm)": rpm,
+            f"{thruster}(P/D)": pd
+        })
         cmd_array.cmds.append(cmd)
 
         # Publish the message
         self.vesselCmd_pub.publish(cmd_array)
 
         # Also log with ROS logger
-        self.get_logger().info(f"{cmd.vessel_name} - propeller command published: rpm={rpm}, P/D={pd}")
+        self.get_logger().info(f"{cmd.vessel_name} - {thruster} command published: rpm={rpm}, P/D={pd}")
+
 
     def control_lrauv_callback(self, msg: Bool):
         """
@@ -162,4 +175,4 @@ class LrauvPropeller(Lrauv):
             if self.nav_timer is not None:
                 self.nav_timer.cancel()
                 self.nav_timer = None
-            self.send_propeller_command(rpm=0.0, pd=0.88)  # Stop propeller
+            self.send_propeller_command(rpm=100.0, pd=0.88) # example to send a propeller command

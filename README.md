@@ -1,62 +1,64 @@
 # LOTUSim Generic Scenario
 
+## Installation 
+
+Clone the repository in the location: `$HOME/Documents/workspace/lotusim/`
+
+```sh
+mkdir -p ~/Documents/workspace/lotusim
+cd workspace/lotusim/
+sudo apt update
+sudo apt install -y jq
+git clone --recurse-submodules https://github.com/naval-group/LOTUSim-generic-scenario
+```
+
+And after cloning:
+
+```sh
+git submodule update --remote --merge
+```
+
 ## Setup and Source the Packages
 
-The architecture of the three repositories is defined in:  
-`lotusim-generic-scenario/src/simulation_run/executable/scenario_launch.sh`
+The architecture of the repositories [LOTUSim](https://github.com/naval-group/LOTUSim) and [Generic Scenario](https://github.com/naval-group/LOTUSim-generic-scenario) is defined in:  
+`LOTUSim-generic-scenario/src/simulation_run/executable/scenario_launch.sh`
 
 ```sh
 # -------------------- Paths --------------------
-PATH=$HOME/lotusim_ws/src/lotusim/physics:$HOME/lotusim_ws/src/lotusim/launch:$PATH
+PATH=$HOME/lotusim_ws/src/lotusim/physics:$HOME/lotusim_ws/src/LOTUSim/launch:$PATH
 LOTUSIM_WS=$HOME/lotusim_ws
-LOTUSIM_PATH=$LOTUSIM_WS/src/lotusim
+LOTUSIM_PATH=$LOTUSIM_WS/src/LOTUSim
 LD_LIBRARY_PATH=$LOTUSIM_PATH/physics:$LD_LIBRARY_PATH
 LOTUSIM_MODELS_PATH=$LOTUSIM_PATH/assets/models
 
 # --- Updated paths for your scenario workspace ---
-LOTUSIM_SCENARIO_WS=$HOME/Documents/workspace/lotusim/lotusim-generic-scenario/
+LOTUSIM_SCENARIO_WS=$HOME/Documents/workspace/lotusim/LOTUSim-generic-scenario
 CONFIG_DIR="$LOTUSIM_SCENARIO_WS/src/simulation_run/config"
 UNITY_EXE_PATH="$LOTUSIM_SCENARIO_WS/lotusim_unity_executables/lotusim_scenario_linux/lotusim_scenario.x86_64"
 ```
 
-Clone the repository in the correct location (or update paths accordingly):
+Open a terminal, do these commands to build and source:
 
 ```sh
-git clone --recurse-submodules <git url>
-```
-
-Or after cloning:
-
-```sh
-git submodule update --init --recursive
-```
-
-Open two terminals, do these commands:
-
-### Terminal 1: Build and Source
-
-```sh
+# Build and Source
 source /opt/ros/humble/setup.bash
 lotusim clean_build
 source $HOME/lotusim_ws/install/setup.bash
-cd $HOME/Documents/workspace/lotusim/lotusim-generic-scenario/
-colcon build
-source install/setup.bash 
 ```
 
-### Terminal 2: Source Workspaces
-
 ```sh
-source /opt/ros/humble/setup.bash
-source $HOME/lotusim_ws/install/setup.bash
-source $HOME/Documents/workspace/lotusim/lotusim-generic-scenario/install/setup.bash
+cd $HOME/Documents/workspace/lotusim/LOTUSim-generic-scenario/
+colcon build
+source install/setup.bash 
 ```
 
 Your setup is now complete, you’re ready to start a simulation!
 
 ## Configure the parameters for your simulation
 
-All configuration files are located in: `/lotusim-generic-scenario/src/simulation_run/config/files.json`
+All configuration files are located in: `/LOTUSim-generic-scenario/src/simulation_run/config/files.json`
+
+
 
 ### Spawning Agents: Supported Initialization Formats
 
@@ -67,11 +69,9 @@ There are two accepted formats:
 ---
 
 **1. Geographic Position (GeoPoint)**
-
 Use this format when providing **latitude and longitude**, with an optional altitude.
 
 Supported inputs:
-
 - `[lat, lon]`
 - `[lat, lon, alt]`
 
@@ -80,17 +80,13 @@ When one of these formats is detected, the system automatically sends a **GeoPoi
 ---
 
 **2. Full Pose (vessel_position)**
-
 Use this format when providing a full **6-element pose**, including position and orientation:
 
 - `[x, y, z, roll, pitch, yaw]`
 
 When 6 elements are detected, the system sends a **vessel_position** message to place the agent at the specified Cartesian pose.
 
----
-
 **Example (2-element GeoPoint):**
-
 ```json
 "Wamv": {
   "nb_agents": 1,
@@ -103,6 +99,7 @@ When 6 elements are detected, the system sends a **vessel_position** message to 
 ```
 
 > **Note**: To enable the physics of the environment (waves and currents) set `"xdyn": true`
+
 
 Below is complete example of a configuration file: `defenseScenario.json`
 
@@ -142,15 +139,6 @@ Below is complete example of a configuration file: `defenseScenario.json`
       "xdyn": true
     },
 
-    "Pha": {
-      "nb_agents": 1,
-      "poses": [
-        [-3000.0, 0.0, 0.0, 0.0, 0.0, 0.0]
-      ],
-      "model": "model.sdf",
-      "xdyn": true
-    },
-
     "Fremm": {
       "nb_agents": 1,
       "poses": [
@@ -177,24 +165,6 @@ Below is complete example of a configuration file: `defenseScenario.json`
       "model": "model.sdf",
       "xdyn": true
     },
-
-    "Wamv": {
-      "nb_agents": 1,
-      "poses": [
-        [-2000.0, -1600.0, 0.0, 0.0, 0.0, 0.0]
-      ],
-      "model": "model.sdf",
-      "xdyn": true
-    },
-
-    "X500": {
-      "nb_agents": 1,
-      "poses": [
-        [20.0, 100.0, 20.0, 0.0, 0.0, 0.0]
-      ],
-      "model": "model.sdf",
-      "xdyn": false
-    }
   },
 
   "aerial_domain": true,
@@ -208,16 +178,12 @@ Below is complete example of a configuration file: `defenseScenario.json`
 
 Once your configuration is ready, you can launch the simulation:
 
-1. **Set your IP** — Update `ROS_IP` in  
-   `lotusim-generic-scenario/src/simulation_run/executable/scenario_launch.sh`
+1. **Set your IP** — Update `ROS_IP`(to know your local IP address:`hostname -I`) in  
+   `LOTUSim-generic-scenario/src/simulation_run/executable/scenario_launch.sh`
 
-2. **Make the Unity executable runnable** — Located at:  
-   `$HOME/Documents/workspace/lotusim/lotusim-generic-scenario/lotusim_unity_executables/lotusim_scenario_linux/lotusim_scenario.x86_64`  
+2. **Launch the Unity executable** — Located at:  
+   `$HOME/Documents/workspace/lotusim/LOTUSim-generic-scenario/src/linux_executable/lotusim_scenario.x86_64`  
    _(Make sure the path matches the one defined in `scenario_launch.sh`.)_
-
-    ```sh
-    chmod +x "$UNITY_EXE_PATH"
-    ```
 
 3. **In the Unity window**, enter:  
    - Your local **IP address**  
@@ -227,16 +193,23 @@ Once your configuration is ready, you can launch the simulation:
 4. **In the first terminal**, run:
 
     ```sh
-    ./src/simulation_run/executable/scenario_launch.sh --config /home/marie/Documents/workspace/lotusim/lotusim-generic-scenario/src/simulation_run/config/defenseScenario.json
+    ./src/simulation_run/executable/scenario_launch.sh --config $HOME/Documents//workspace/lotusim/LOTUSim-generic-scenario/src/simulation_run/config/defenseScenario.json
     ```
 
     For debugging, append `--debug`:
 
     ```sh
-    ./src/simulation_run/executable/scenario_launch.sh --config /home/marie/Documents/workspace/lotusim/lotusim-generic-scenario/src/simulation_run/config/defenseScenario.json --debug
+    ./src/simulation_run/executable/scenario_launch.sh --config $HOME/Documents/workspace/lotusim/LOTUSim-generic-scenario/src/simulation_run/config/defenseScenario.json --debug
     ```
 
-5. In the second terminal launch the following bridge to activate these features:
+5. **In the second terminal**, source workspaces and launch the following bridge to activate these features:
+
+    ```sh
+    # Terminal: Source Workspaces
+    source /opt/ros/humble/setup.bash
+    source $HOME/lotusim_ws/install/setup.bash
+    source $HOME/Documents/workspace/lotusim/LOTUSim-generic-scenario/install/setup.bash
+    ```
 
     This bridge enables communication between Gazebo and ROS 2 for simulation telemetry and environmental effects.
 
@@ -267,7 +240,7 @@ Once your configuration is ready, you can launch the simulation:
     - `wind_ros_to_gz_bridge` → Transfers wind and environmental data
     - `stats_gz_to_ros_bridge` → Transfers simulation statistics such as simulation time and RTF
 
-6. Terminals for the physics will open automatically and the simulation will start
+6. **Terminals for the physics** will open automatically and the simulation will start
 
 >When the connection LOTUSim-Unity is done, in the Unity window, at the top left corner, the arrows will go from red to blue
 
@@ -282,3 +255,66 @@ Once your configuration is ready, you can launch the simulation:
   - X-axis: `1` / `2`  
   - Y-axis: `4` / `5`  
   - Z-axis: `7` / `8`
+
+
+## Use propeller/thrusters
+
+Currently, the propeller have been developped only on the LRAUV.
+
+To use an LRAUV with active propellers, initialise it in the config file `defenseScenario.json` by adding this block:
+
+```json
+"Lrauv_Propeller": {
+  "nb_agents": 1,
+  "poses": [
+    [-2513.0, -2997.0, -100.0, 0.0, 0.0, 0.0]
+  ],
+  "model": "model.sdf",
+  "xdyn": true
+  }
+```
+
+---
+
+### Manual control via ROS topic 
+
+Start the simulation as usual with:
+```sh
+./src/simulation_run/executable/scenario_launch.sh --config $HOME/Documents//workspace/lotusim/LOTUSim-generic-scenario/src/simulation_run/config/defenseScenario.json
+```
+
+Then open a second terminal:
+
+  ```sh
+  # Terminal: Source Workspaces
+  source /opt/ros/humble/setup.bash
+  source $HOME/lotusim_ws/install/setup.bash
+  source $HOME/Documents/workspace/lotusim/LOTUSim-generic-scenario/install/setup.bash
+  ```
+  
+Whenever you are ready to send a propeller command, send in the second terminal:
+  ```sh
+  ros2 topic pub /defenseScenario/lrauvpropeller0/control_lrauv std_msgs/msg/Bool "data:  true"
+  ```
+
+You can change the value of the `rpm` sent by modifying the file `/home/marie/Documents/workspace/lotusim/lotusim-generic-scenario/src/agents/lrauv/lrauv/lrauv_propeller.py`, in this line:
+  ```py
+  self.send_propeller_command(rpm=100.0, pd=0.88) # example to send a propeller command
+  ```
+
+This command will send the defaut high rpm value set in `lrauv_propeller.py`
+  ```sh
+  ros2 topic pub /defenseScenario/lrauvpropeller0/control_lrauv std_msgs/msg/Bool "data:  false"
+  ```
+
+---
+### Propeller with auto-start cycle
+
+Finally, to use the propeller with a cycle between high and low values, simply uncomment the third line in `lrauv_propeller.py`:
+```py
+# Automatically start the RPM sequence on initialization
+# NOTE: Disabled auto-start for development — manual control via ROS topic
+# self.start_sequence()
+```
+
+> NOTE: Don't forget to colcon build any modification of the code and source the repo 

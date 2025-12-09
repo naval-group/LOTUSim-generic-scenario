@@ -48,14 +48,14 @@ ROS_IP="${ROS_IP:-}"  # <-- Fill this in or export it before running the script
 UNITY_MODE="exe"
 
 # -------------------- Paths --------------------
-PATH=$HOME/lotusim_ws/src/lotusim/physics:$HOME/lotusim_ws/src/lotusim/launch:$PATH
+PATH=$HOME/lotusim_ws/src/lotusim/physics:$HOME/lotusim_ws/src/LOTUSim/launch:$PATH
 LOTUSIM_WS=$HOME/lotusim_ws
-LOTUSIM_PATH=$LOTUSIM_WS/src/lotusim
+LOTUSIM_PATH=$LOTUSIM_WS/src/LOTUSim
 LD_LIBRARY_PATH=$LOTUSIM_PATH/physics:$LD_LIBRARY_PATH
 LOTUSIM_MODELS_PATH=$LOTUSIM_PATH/assets/models
 
 # --- Updated paths for your scenario workspace ---
-LOTUSIM_SCENARIO_WS=$HOME/Documents/workspace/lotusim/lotusim-generic-scenario/
+LOTUSIM_SCENARIO_WS=$HOME/Documents/workspace/lotusim/LOTUSim-generic-scenario
 CONFIG_DIR="$LOTUSIM_SCENARIO_WS/src/simulation_run/config"
 UNITY_EXE_PATH="$LOTUSIM_SCENARIO_WS/lotusim_unity_executables/lotusim_scenario_linux/lotusim_scenario.x86_64"
 
