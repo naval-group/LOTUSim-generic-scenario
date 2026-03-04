@@ -16,7 +16,7 @@ Designed to serve as the central runtime layer of the simulation system,
 coordinating agent management, monitoring, and performance evaluation.
 
 @version 0.1
-@date 2025-10-17
+@date 2026-03-03
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at:
@@ -84,27 +84,57 @@ def initialize_ros_components(
 
 def run_executor(executor: Any, max_simulation_time: Optional[float] = None) -> None:
     """
-    Run the ROS 2 executor loop until shutdown or maximum simulation time is reached.
+    Run a ROS 2 executor loop until a shutdown condition is met.
+
+    The loop exits when one of the following occurs:
+        - `shutdown_flag` becomes True
+        - `rclpy.ok()` returns False
+        - `max_simulation_time` (if provided) is exceeded
+        - An exception is raised during executor spinning
 
     Args:
-        executor: ROS 2 executor to spin.
-        max_simulation_time: Optional maximum runtime in seconds. (currently not used)
+        executor: ROS 2 executor instance to spin.
+        max_simulation_time: Optional maximum runtime in seconds.
 
     Notes:
-        Checks `shutdown_flag` and ROS 2 status to exit gracefully.
+        The executor is polled using `spin_once(timeout_sec=0.1)`
+        to periodically check shutdown conditions.
     """
     start_time = time.time()
-
     try:
-        while True:
+        while rclpy.ok():
+            elapsed = time.time() - start_time
+
+            # Check external shutdown flag
             with shutdown_flag_lock:
-                if shutdown_flag or not rclpy.ok():
+                if shutdown_flag:
+                    logging.info(f"run_executor EXIT: shutdown_flag=True at t={elapsed:.1f}s")
                     break
 
-            if max_simulation_time and (time.time() - start_time > max_simulation_time):
-                logging.info(f"Max simulation time ({max_simulation_time}s) reached. Stopping executor.")
+            # Check maximum simulation time
+            if max_simulation_time is not None and elapsed > max_simulation_time:
+                logging.info(f"run_executor EXIT: max_simulation_time={max_simulation_time}s reached")
                 break
 
-            executor.spin_once(timeout_sec=0.1)
+            # Spin executor once
+            try:
+                executor.spin_once(timeout_sec=0.1)
+            except Exception as e:
+                logging.error(
+                    f"run_executor EXCEPTION at t={elapsed:.1f}s: " f"{type(e).__name__}: {e}",
+                    exc_info=True,
+                )
+                break
+
+        if not rclpy.ok():
+            logging.info(f"run_executor EXIT: rclpy.ok()=False at t={time.time() - start_time:.1f}s")
+
+    except BaseException as e:
+        logging.error(
+            f"run_executor BASE EXCEPTION: {type(e).__name__}: {e}",
+            exc_info=True,
+        )
+        raise
+
     finally:
-        return
+        logging.info(f"run_executor: cleanup reached at t={time.time() - start_time:.1f}s")

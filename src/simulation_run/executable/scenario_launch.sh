@@ -37,10 +37,10 @@ NC='\033[0m'
 # Set ROS 2 Domain ID used across all processes
 ROS_DOMAIN_ID=10
 
-# Define your local machine IP address for Unity communication
-# (Required only when using Unity renderer)
-# Example: export ROS_IP=192.168.50.34
-ROS_IP="${ROS_IP:-}"  # <-- Fill this in or export it before running the script
+# Set ROS_IP to the first local IP address if it is not already defined. 
+# To use a specific IP, set ROS_IP manually before using this file, 
+# e.g. export ROS_IP=192.168.1.42 
+export ROS_IP="${ROS_IP:-$(hostname -I | awk '{print $1}')}"
 
 # Unity mode options:
 #   "exe"    → run pre-built Unity executable (default)

@@ -42,7 +42,10 @@ import os
 import re
 import random
 import xml.etree.ElementTree as ET
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple
+import argparse
+from importlib.metadata import entry_points
+from simulation_run.configs import WaypointFollowerConfig
 
 # ----------------------------------------------------------------------
 # CLI & Configuration Helpers
@@ -238,22 +241,35 @@ def generate_lotus_param(
     thrusters: list[str],
     xdyn_ip: str | None,
     xdyn_port: str | None,
+    trajectory_follower: str | None = None,
+    trajectory_follower_config: WaypointFollowerConfig | None = None,
 ) -> str:
     """
-    Generate the <lotus_param> XML block for LOTUSim.
+    Generate the <lotus_param> XML block for LOTUSim simulation configuration.
+
+    This function produces an XML block specifying renderer, physics, thrusters,
+    and optional trajectory follower settings for a vessel.
 
     Behavior:
-        - <physics_engine_interface> is generated if at least one domain is provided.
+        - Generates <physics_engine_interface> if at least one domain is provided.
         - Domain-specific backends:
-            * Aerial → ROS2 (no XDyn required)
-            * Other domains → XDynWebSocket (requires xdyn_ip & xdyn_port)
+            * Aerial → ROS2 (no XDyn connection required)
+            * Surface/Underwater → XDynWebSocket (requires xdyn_ip & xdyn_port)
+        - If trajectory_follower is provided, adds configuration from
+        `trajectory_follower_config`.
+        - Defaults to PID guidance mode if no guidance_mode is specified in the config.
 
     Args:
-        model_name (str): Rendering type name.
-        domains (list[str]): Physics domains (Surface, Underwater, Aerial…)
-        thrusters (list[str]): Thruster names.
-        xdyn_ip (str|None): XDyn WebSocket IP.
-        xdyn_port (str|None): XDyn WebSocket port.
+        renderer_type_name (str): Type of renderer (e.g., "Ignition", "OGRE").
+        domains (list[str]): Physics domains for the vessel (Surface, Underwater, Aerial, etc.).
+        thrusters (list[str]): Names of thrusters to include.
+        xdyn_ip (str | None): IP address for XDynWebSocket backend (required for non-aerial domains).
+        xdyn_port (str | None): Port for XDynWebSocket backend (required for non-aerial domains).
+        trajectory_follower (str | None, optional): Name of trajectory follower plugin (default: None).
+        trajectory_follower_config (WaypointFollowerConfig | None, optional): Configuration for trajectory follower (default: None).
+
+    Returns:
+        str: XML string representing the lotus_param block for the vessel.
     """
 
     # ------------------------------------------------------------------
@@ -303,9 +319,51 @@ def generate_lotus_param(
         physics_block += "\n  </physics_engine_interface>"
 
     # ------------------------------------------------------------------
+    # TRAJECTORY FOLLOWER BLOCK — ONLY IF trajectory_follower is specified
+    # ------------------------------------------------------------------
+    trajectory_follower_block = ""
+    if trajectory_follower:
+        cfg = trajectory_follower_config or WaypointFollowerConfig()
+        trajectory_follower_block = f"""
+    <waypoint_follower>
+        <follower>{
+                _opt_tag("guidance_mode", cfg.guidance_mode)}{
+                _opt_tag("loop", cfg.loop)}{
+                _opt_tag("range_tolerance", cfg.range_tolerance)}{
+                _opt_tag("linear_accel_limit", cfg.linear_accel_limit)}{
+                _opt_tag("angular_accel_limit", cfg.angular_accel_limit)}{
+                _vec2_tag("linear_velocities_limits", cfg.linear_velocities_limits)}{
+                _opt_tag("angular_velocities_limits", cfg.angular_velocities_limits)}{
+                _pid_tag("linear_pid", cfg.linear_pid)}{
+                _pid_tag("angular_pid", cfg.angular_pid)}
+        </follower>
+    </waypoint_follower>"""
+
+    # ------------------------------------------------------------------
     # FINAL XML
     # ------------------------------------------------------------------
-    return f"<lotus_param>{render_block}{physics_block}\n</lotus_param>"
+    return f"<lotus_param>{render_block}{physics_block}{trajectory_follower_block}\n</lotus_param>"
+
+
+# ----------------------------------------------------------------------
+# LOTUSim XML Tag Helpers (private)
+# ----------------------------------------------------------------------
+
+
+def _opt_tag(tag, value) -> str:
+    return f"\n        <{tag}>{value}</{tag}>" if value is not None else ""
+
+
+def _vec2_tag(tag, value: tuple) -> str:
+    if value is None:
+        return ""
+    return f"\n        <{tag}>{value[0]} {value[1]}</{tag}>"
+
+
+def _pid_tag(tag, gains: tuple) -> str:
+    if gains is None:
+        return ""
+    return f"\n        <{tag}>{gains[0]} {gains[1]} {gains[2]}</{tag}>"
 
 
 # ----------------------------------------------------------------------
