@@ -13,7 +13,7 @@
 # - Starts main Python simulation with debug mode support
 #
 # @version 0.1
-# @date 2025-10-08
+# @date 2026-03-04
 #
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at:
@@ -99,10 +99,12 @@ sleep 5
 # ============================================================
 CONFIG_FILE=""
 DEBUG_MODE="false"
+GZ_GUI="false"
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --config) CONFIG_FILE="$2"; shift 2 ;;
         --debug) DEBUG_MODE="true"; shift ;;
+        --gui) GZ_GUI="true"; shift ;;
         *) echo -e "${YELLOW}[WARN] Unknown argument: $1${NC}"; shift ;;
     esac
 done
@@ -280,16 +282,18 @@ if [[ "$DEBUG_MODE" == "true" ]]; then
     DEBUG_ARG="--debug"
 fi
 
+# Build argument list
+ARGS=("--config" "$CONFIG_FILE")
+[[ "$DEBUG_MODE" == "true" ]] && ARGS+=("--debug")
+[[ "$GZ_GUI" == "true" ]] && ARGS+=("--gui")
+
+
 echo -e "${YELLOW}[INFO] Launching simulation with debug: $DEBUG_MODE${NC}"
 
 PYTHON_PID=""
-if [[ "$DEBUG_MODE" == "true" ]]; then
-    ros2 run simulation_run main --config "$CONFIG_FILE" --debug &
-    PYTHON_PID=$!
-else
-    ros2 run simulation_run main --config "$CONFIG_FILE" &
-    PYTHON_PID=$!
-fi
+# Single command with all arguments
+ros2 run simulation_run main "${ARGS[@]}" &
+PYTHON_PID=$!
 
 CHILD_PIDS+=($PYTHON_PID)
 

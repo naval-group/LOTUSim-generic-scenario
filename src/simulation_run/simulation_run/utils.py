@@ -25,7 +25,7 @@ bridge setup processes across the LOTUSim ecosystem.
 These utilities are used across simulation initialization, agent spawning, and bridge setup processes.
 
 @version 0.1
-@date 2025-10-08
+@date 2026-03-04
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at:
@@ -66,6 +66,7 @@ def get_cli_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Launch a Lotusim simulation")
     parser.add_argument("--config", type=str, required=True, help="Configuration JSON file name")
     parser.add_argument("--debug", action="store_true", help="Enable debug mode for verbose simulation output")
+    parser.add_argument("--gui", action="store_true", help="Enable Gazebo gui")
     return parser.parse_args()
 
 
@@ -135,76 +136,6 @@ def get_world_name(world_file_name: str) -> str:
         return world_elem.attrib.get("name", "")
     except Exception as e:
         raise RuntimeError(f"Error extracting world name from {world_file_name}: {e}")
-
-
-def resolve_sdf_path(agent_name: str, filename: str, base_models_path: str) -> str:
-    """
-    Resolve the SDF path for an agent, falling back to any folder
-    that partially matches the agent name if exact folder does not exist.
-
-    Args:
-        agent_name: JSON agent name, e.g., 'Fremm_Observator'
-        filename: SDF filename, e.g., 'model.sdf'
-        base_models_path: Root folder containing all agent model folders
-
-    Returns:
-        Full path to the SDF file.
-
-    Raises:
-        FileNotFoundError: If no valid SDF file is found.
-    """
-    agent_name_lower = agent_name.lower()
-
-    # Exact folder first
-    sdf_path = os.path.join(base_models_path, agent_name_lower, filename)
-    if os.path.exists(sdf_path):
-        return sdf_path
-
-    # Fallback: check if any folder name is contained in the agent name
-    for folder in os.listdir(base_models_path):
-        folder_lower = folder.lower()
-        if folder_lower in agent_name_lower or agent_name_lower in folder_lower:
-            candidate_path = os.path.join(base_models_path, folder, filename)
-            if os.path.exists(candidate_path):
-                logging.info(f"SDF for '{agent_name}' not found — using fallback folder '{folder}'")
-                return candidate_path
-
-    raise FileNotFoundError(f"No valid SDF found for '{agent_name}' (tried exact and fallback folders)")
-
-
-def generate_sdf_strings(agent_models: Dict[str, str]) -> Dict[str, str]:
-    """
-    Load SDF files for each agent type, using resolve_sdf_path for fallbacks.
-    Stores the raw SDF content (with placeholder {model_name}) without assigning instance-specific names yet.
-
-    Args:
-        agent_models: Dict mapping JSON agent names to filenames (or None for default 'model.sdf')
-
-    Returns:
-        Dict mapping JSON agent names to raw SDF strings.
-    """
-    sdf_strings = {}
-    base_models_path = os.environ.get("LOTUSIM_MODELS_PATH", "")
-    if not base_models_path:
-        logging.warning("LOTUSIM_MODELS_PATH not set — using current directory.")
-        base_models_path = os.getcwd()
-
-    for json_name, model_file in agent_models.items():
-        filename = model_file or "model.sdf"
-
-        # Resolve the SDF path (exact or fallback)
-        sdf_path = resolve_sdf_path(json_name, filename, base_models_path)
-
-        # Load content
-        with open(sdf_path, "r") as f:
-            sdf_content = f.read()
-
-        # Replace the model name with a placeholder for dynamic instance naming
-        sdf_content = re.sub(r'<model\s+name="[^"]*"\s*>', '<model name="{model_name}">', sdf_content, count=1)
-
-        sdf_strings[json_name] = sdf_content
-
-    return sdf_strings
 
 
 # ----------------------------------------------------------------------

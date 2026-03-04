@@ -12,7 +12,7 @@ The script launches Lotusim in new GNOME terminal instances, initializes ROS 2 a
 and ensures that all processes are safely terminated upon simulation completion or interruption.
 
 @version 0.1
-@date 2025-10-08
+@date 2026-03-04
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0 which is available at:
@@ -54,7 +54,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 # -------------------------------------------------------------------------
 # Simulation Launch Utilities
 # -------------------------------------------------------------------------
-def build_launch_command(world_file: str, aerial_domain: bool, debug: bool = False) -> List[str]:
+def build_launch_command(world_file: str, aerial_domain: bool, debug: bool = False, gui: bool = False) -> List[str]:
     """
     Builds the shell commands required to launch the Lotusim simulation.
 
@@ -62,19 +62,21 @@ def build_launch_command(world_file: str, aerial_domain: bool, debug: bool = Fal
         world_file: Path to the world file to launch.
         aerial_domain: Whether to launch in aerial mode.
         debug: Enable debug mode (adds '--debug' flag to commands).
+        gui: Enable Gazebo GUI (adds '--gui' flag to commands).
 
     Returns:
         A list of full command strings to execute.
     """
     base_command = "lotusim"
     debug_flag = "--debug" if debug else ""
+    gui_flag = "--gui" if gui else ""
     commands: List[str] = []
 
     if aerial_domain:
-        commands.append(f"{base_command} {debug_flag} run aerialWorld.world".strip())
-        commands.append(f"{base_command} {debug_flag} run {world_file}".strip())
+        commands.append(f"{base_command} {debug_flag} {gui_flag} run aerialWorld.world".strip())
+        commands.append(f"{base_command} {debug_flag} {gui_flag} run {world_file}".strip())
     else:
-        commands.append(f"{base_command} {debug_flag} run {world_file}".strip())
+        commands.append(f"{base_command} {debug_flag} {gui_flag} run {world_file}".strip())
 
     print(f"[DEBUG] Launch commands: {commands}")  # Add debug print to check the actual commands
     return commands
@@ -127,6 +129,7 @@ def run_simulation(
     max_simulation_time: Optional[float] = None,
     aerial_domain: bool = False,
     debug_mode: bool = False,
+    gui=False,
 ) -> Any:
     """
     Orchestrates the full simulation lifecycle.
@@ -145,6 +148,7 @@ def run_simulation(
         max_simulation_time: Optional maximum simulation duration (seconds).
         aerial_domain: Whether to launch an aerial domain.
         debug_mode: Enable verbose logging.
+        gui: Enable Gazebo GUI.
     """
 
     global process
@@ -164,7 +168,7 @@ def run_simulation(
     # Reset Gazebo and prepare launch command
     reset_gazebo_state()
 
-    launch_commands = build_launch_command(world_file, aerial_domain, debug=debug_mode)
+    launch_commands = build_launch_command(world_file, aerial_domain, debug=debug_mode, gui=gui)
 
     # Start simulation process
     process = start_simulation_process(launch_commands)

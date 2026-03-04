@@ -21,7 +21,7 @@ It initializes the simulation environment and hands off runtime management
 to the `simulation_run` subsystem.
 
 @version 0.1
-@date 2025-10-08
+@date 2026-03-04
 
 This program and the accompanying materials are made available under the
 terms of the Eclipse Public License 2.0:
@@ -77,6 +77,7 @@ def main():
     args = utils.get_cli_args()
 
     print(f"\033[93m[DEBUG] Debug mode is {'ENABLED' if args.debug else 'DISABLED'}\033[0m")
+    print(f"\033[93m[DEBUG] GUI mode is {'ENABLED' if args.gui else 'DISABLED'}\033[0m")
 
     # Determine config path
     try:
@@ -106,7 +107,9 @@ def main():
 
     # Run simulation
     print("Starting Simulation...")
-    simulation_runner.run_simulation(world_file, agents, aerial_domain=aerial_enabled, debug_mode=args.debug)
+    simulation_runner.run_simulation(
+        world_file, agents, aerial_domain=aerial_enabled, debug_mode=args.debug, gui=args.gui
+    )
 
 
 if __name__ == "__main__":
